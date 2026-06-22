@@ -102,9 +102,9 @@ predict(model, ps, st, x::AbstractVector) = vec(predict(model, ps, st, reshape(x
 Build a differentiable physics-informed loss term: the mean relative discrete PDE
 residual `‖A(μ)û − b‖² / ‖b‖²` of the reconstructed fields `û = ū + ΦᵣĈ`, with the
 operators `A(μ)` precomputed once. Plug it into [`train!`](@ref) through the `extra`
-hook to add a residual-regularised term (the optional P1 ablation). In Julia/Zygote
-the sparse `A(μ)` are constants, so gradients flow cleanly through `Ĉ` — no custom
-differentiable-stencil gymnastics required.
+hook to add a residual-regularised term (the optional P1 ablation). For this ablation
+the term differentiates through the implemented residual computation without custom
+adjoints (the sparse `A(μ)` are treated as constants).
 """
 function make_residual_loss(g::Grid, P::PODBasis, μs, r::Integer; ffun = forcing)
     As = [assemble_matrix(g, (x, y) -> diffusion(x, y, μ)) for μ in μs]

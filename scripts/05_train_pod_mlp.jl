@@ -10,7 +10,8 @@ r = DEFAULT_R
 Ctr = project(pod.P, Utr, r)            # r × M training targets
 
 hidden, depth, epochs = 64, 3, 6000
-rng = StableRNG(SEED + 2)
+rng = StableRNG(SEED + 100 + r)   # same seed as the scripts/11 sweep at this rank,
+                                  # so the headline equals the §8.1 r-sweep row
 model, ps, st = build_pod_mlp(r; hidden, depth, rng)
 
 println("Training POD-MLP:  μ ∈ ℝ² → c ∈ ℝ^$r   ($(param_count(model)) params)")

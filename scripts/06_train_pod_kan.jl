@@ -13,7 +13,8 @@ r = DEFAULT_R
 Ctr = project(pod.P, Utr, r)
 
 width, grid_size, epochs = 20, 10, 10000
-rng = StableRNG(SEED + 3)
+rng = StableRNG(SEED + 200 + r)   # same seed as the scripts/11 sweep at this rank,
+                                  # so the headline equals the §8.1 r-sweep row
 model, ps, st = build_pod_kan(r; width, grid_size, rng)
 
 println("Training POD-KAN:  μ ∈ ℝ² → c ∈ ℝ^$r   ($(param_count(model)) params)")

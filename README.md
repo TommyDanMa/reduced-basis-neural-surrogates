@@ -10,7 +10,7 @@ handful of reduced-basis coefficients instead of every grid value.
 
 - **Question.** Can reduced-basis coefficient learning outperform direct field prediction for a parametric elliptic PDE?
 - **Core result.** Yes - POD-MLP reaches sub-percent error and a much lower PDE residual than the direct MLP, with far fewer parameters.
-- **Twist.** The optimal POD rank is *non-monotonic*: extra modes lower reconstruction error but hurt learnability and the PDE residual, so the best surrogate uses only **r ≈ 5** modes - rank is chosen by validation error and residual, not by singular-value decay.
+- **Twist.** The optimal POD rank is *non-monotonic*: extra modes lower reconstruction error but hurt learnability and the PDE residual, so the best surrogates sit at very low rank (**r = 3-5**); we deploy **r = 5** as a balanced choice across both mappers, chosen by validation error and residual, not by singular-value decay.
 - **Main caveat.** This is a smooth, 2-parameter toy problem on a fixed square domain, so the result is a **controlled prototype, not a general theorem.**
 
 > **Thesis.** Parametric PDE solutions live on a low-dimensional manifold
@@ -25,9 +25,9 @@ the validation-selected rank **r = 5**):
 
 | Surrogate   | Learns   | rel L² error | learnable params | PDE residual | single-q × | batched × |
 |-------------|----------|-------------:|-----------------:|-------------:|-----------:|----------:|
-| Direct MLP  | `μ ↦ u`  |        ~3.2% |          112,512 |        ~10.1 |        21× |      278× |
-| **POD-MLP** | `μ ↦ c`  |       ~0.39% |            8,837 |       ~0.033 |       145× |      302× |
-| **POD-KAN** | `μ ↦ c`  |       ~0.71% |        **1,540** |       ~0.066 |       155× |      328× |
+| Direct MLP  | `μ ↦ u`  |        ~3.2% |          112,512 |        ~10.1 |        22× |      279× |
+| **POD-MLP** | `μ ↦ c`  |       ~0.36% |            8,837 |       ~0.032 |       146× |      303× |
+| **POD-KAN** | `μ ↦ c`  |       ~0.69% |        **1,540** |       ~0.037 |       155× |      324× |
 
 The reduced-basis models are far more accurate, far smaller and far more physically
 consistent (tiny PDE residual) than the direct baseline. The POD reconstruction
@@ -36,8 +36,8 @@ basis is never the bottleneck, the network is.** (Numbers from `scripts/07`;
 regenerate to reproduce.)
 
 Two caveats worth reading before quoting the table: a **rank sweep** (`scripts/11`)
-shows accuracy is *non-monotonic* in rank - the best surrogate uses only **r ≈ 5**
-modes, not the largest rank (report §8.1); and the **speed-up** column is batched
+shows accuracy is *non-monotonic* in rank - the best surrogates sit at very low rank
+(**r = 3-5**), not the largest (report §8.1); and the **speed-up** column is batched
 throughput. `scripts/13_benchmark.jl` (BenchmarkTools) breaks out single-query
 latency vs batched throughput honestly - the large batched number is
 throughput-specific and *not* the headline of the method.

@@ -20,8 +20,9 @@ POD coefficients ($\mu\mapsto c$) beats direct field prediction ($\mu\mapsto u$)
 a large margin** in accuracy, parameter count and PDE residual, and every
 reconstruction satisfies the boundary conditions exactly. The optimal rank is **not
 monotonic** - extra POD modes reduce the reconstruction error but can hurt
-learnability and the PDE residual, so the best surrogate here uses only $r\approx5$
-modes. This is a smooth, two-parameter problem on a fixed square domain, so the
+learnability and the PDE residual, so the best surrogates here sit at very low rank
+($r=3$–$5$); we deploy $r=5$ as a balanced rank across both mappers. This is a
+smooth, two-parameter problem on a fixed square domain, so the
 result is a **controlled prototype, not a general theorem.**
 
 ---
@@ -56,8 +57,9 @@ $u(\cdot;\mu)$ trace out a manifold $\mathcal M=\{u(\cdot;\mu):\mu\in P\}$. How 
 can an $n$-dimensional subspace approximate *all* of it? This is the Kolmogorov
 $n$-width
 $$d_n(\mathcal M)=\inf_{\substack{V\subset \mathcal H\\\dim V=n}}\ \sup_{u\in\mathcal M}\ \inf_{v\in V}\|u-v\|.$$
-For parametric elliptic problems $d_n$ decays fast, which is exactly what makes
-reduced-basis methods work.
+For many smooth, low-dimensional parametrized elliptic problems the solution
+manifold has rapidly decaying reduced-basis error, which is exactly what
+reduced-basis methods exploit.
 
 **POD / SVD.** Given snapshots $S=[u(\mu^{(1)})\,\cdots\,u(\mu^{(M)})]$ and the
 mean $\bar u$, the SVD $S-\bar u\mathbf 1^\top=\Phi\Sigma V^\top$ yields POD modes
@@ -201,8 +203,9 @@ mappers (`scripts/11_rank_sweep.jl`):
 Counter-intuitively, accuracy does **not** improve monotonically with rank - the
 best surrogates here use only $r=3$–$5$ modes. Because the POD reconstruction floor
 is already negligible at every rank (§4–5), extra modes do not help the basis; they
-only force the network to learn more coefficients, and the added modes are
-higher-frequency, so small errors in them inflate both the $L^2$ error and -
+only force the network to learn more coefficients, and the added modes carry
+progressively larger residual leverage, so small errors in them inflate both the
+$L^2$ error and -
 especially - the PDE residual, which grows by an order of magnitude from $r=3$ to
 $r=20$. The sweet spot balances basis expressiveness against *learnability*. The
 KAN tracks the MLP throughout with far fewer parameters.
@@ -211,16 +214,17 @@ KAN tracks the MLP throughout with far fewer parameters.
 *not* the largest rank with small reconstruction error - it is the rank that
 balances reconstruction accuracy, learnability, and PDE residual, chosen by
 validation $L^2$ error and PDE residual, **not** by singular-value decay alone. Here
-that balance lands at very low rank, so we select **$r = 5$** as the deployed model
-(set `DEFAULT_R = 5` in `scripts/config.jl` and rerun `05`–`07`).
+that balance lands at very low rank ($r=3$–$5$); we deploy **$r = 5$** as a balanced
+rank across both coefficient mappers (set `DEFAULT_R = 5` in `scripts/config.jl`).
 
 **Why high modes hurt (mechanism).** A per-mode diagnostic
 (`scripts/14_mode_diagnostics.jl`) makes the non-monotonicity transparent: the
 coefficient signal $|c_i|$ decays quickly while the network's per-mode error decays
 much more slowly, so the *relative* coefficient error rises toward 1 (a
 signal-to-noise collapse); meanwhile the residual leverage $\lVert A\phi_i\rVert$
-grows with mode index because higher POD modes are higher-frequency. High modes are
-thus both the hardest to learn and the most heavily penalised in the PDE residual.
+grows with mode index — in this experiment the later POD modes carry larger
+stiffness, behaving like higher-frequency corrections. High modes are thus both the
+hardest to learn and the most heavily penalised in the PDE residual.
 
 ![Mode-wise diagnostics](../figures/15_mode_diagnostics.png)
 
@@ -236,9 +240,10 @@ subset):
 | POD-MLP + residual loss ($\lambda=10^{-3}$) | 3.08e-2 | 4.70e-1 |
 
 The residual term trades a little $L^2$ accuracy for better physics consistency
-(larger $\lambda$ hurts both - see the full $\lambda$-sweep in the script). In
-Julia/Zygote the sparse operators $A(\mu)$ differentiate cleanly, so this needs no
-custom machinery; it is an optional extension, not the core method.
+(larger $\lambda$ hurts both - see the full $\lambda$-sweep in the script). For this
+ablation, the residual term differentiated through the implemented residual
+computation without requiring custom adjoints; it is an optional extension, not the
+core method.
 
 ### 8.3 Is POD the *right* basis?
 
@@ -270,10 +275,10 @@ separating single-query latency from batched throughput so neither is oversold:
 
 | Method | single-query (ms) | batched (ms/query) | single× | batched× | allocs (1-q) |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| FOM solve  | 1.55  | -      | 1×   | -    | 100 |
-| direct MLP | 0.073 | 0.0056 | 21×  | 278× |  17 |
-| POD-MLP    | 0.011 | 0.0051 | 145× | 302× |  22 |
-| POD-KAN    | 0.010 | 0.0047 | 155× | 328× |  80 |
+| FOM solve  | 1.54  | -      | 1×   | -    | 100 |
+| direct MLP | 0.071 | 0.0055 | 22×  | 279× |  17 |
+| POD-MLP    | 0.011 | 0.0051 | 146× | 303× |  22 |
+| POD-KAN    | 0.010 | 0.0047 | 155× | 324× |  80 |
 
 *Method: median wall-clock over BenchmarkTools samples; batch size = 100. The
 batched column is per-query (batched median ÷ batch size). Reported speed-ups are
@@ -323,7 +328,7 @@ for higher-dimensional parameter spaces.
 **Conclusion.** The optimal reduced dimension is *not* the largest rank with small
 reconstruction error; it is the rank that balances reconstruction accuracy,
 learnability, and PDE residual. In this experiment that balance occurs at very low
-rank ($r\approx5$) - a small, interpretable surrogate that is faster, more accurate,
+rank ($r=3$–$5$) - a small, interpretable surrogate that is faster, more accurate,
 and more physically consistent than predicting the field directly.
 
 ## 11. Future work
@@ -335,7 +340,7 @@ and more physically consistent than predicting the field directly.
   sequences). Finite Element Exterior Calculus (Arnold–Falk–Winther) builds
   discretisations that *do* respect this structure. Combining the reduced-basis
   idea with FEEC-compatible spaces points toward **structure-preserving neural
-  operators** - the "future cathedral" beyond this report.
+  operators**.
 - **Physics-informed training** - adding the discrete PDE residual to the loss
   (an optional ablation here, `λ_res`-weighted) rather than using it only as a
   metric.
