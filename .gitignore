@@ -1,0 +1,11 @@
+# Generated data artifacts (regenerable via scripts/)
+/data/
+
+# Julia coverage / profiling
+*.jl.cov
+*.jl.*.cov
+*.jl.mem
+.DS_Store
+
+# Editor
+/.vscode/
