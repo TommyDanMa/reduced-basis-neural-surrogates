@@ -59,5 +59,10 @@ save(joinpath(FIG_DIR, "10_paramcount.png"),
 save(joinpath(FIG_DIR, "11_dashboard.png"),
      dashboard_figure(xs, xs, A, Utrue, Uhat, pod.P.svals; r = r, μ = μ))
 
-println("wrote 11 figures to ", relpath(FIG_DIR, PROJECT_DIR), "/")
+# operator factorisation G = R ∘ N (parameters → coefficients → field)
+mode_imgs = [embed_full(g, pod.P.modes[:, k]) for k in 1:5]
+save(joinpath(FIG_DIR, "12_operator_diagram.png"),
+     operator_diagram(mode_imgs, xs; r = r, N = ndof(g)))
+
+println("wrote figures to ", relpath(FIG_DIR, PROJECT_DIR), "/")
 foreach(f -> println("  ", f), sort(readdir(FIG_DIR)))

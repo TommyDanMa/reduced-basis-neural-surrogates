@@ -79,6 +79,13 @@ modes — reconstructions satisfy the Dirichlet condition **exactly**. A small M
 KAN learns `μ ↦ c`; the relative PDE residual is the physics-consistency metric, and
 an optional residual-regularised loss is available as an ablation.
 
+Equivalently, the solution operator `G : μ ↦ u` is factored as **`G = R ∘ N`**, where
+`N : μ ↦ c` is the small learned network and `R : c ↦ ū + Φᵣc` is the *fixed* POD
+reconstruction. Unlike DeepONet / FNO (which learn the output representation jointly
+with the map), the basis here is fixed a priori from data — maximal structure for
+minimal learning. See `scripts/11`–`12` for the rank sweep and the
+POD-vs-sine-vs-random basis stress-test.
+
 ## Future work
 
 Structure-preserving bases via Finite Element Exterior Calculus (Arnold–Falk–

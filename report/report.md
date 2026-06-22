@@ -56,6 +56,28 @@ $c_i(\mu)=\phi_i^\top\big(u(\mu)-\bar u\big)$ and
 $u(\mu)\approx \bar u+\sum_{i=1}^r c_i(\mu)\,\phi_i.$ The network only learns the
 $r$-vector $c(\mu)$, not the $N$ grid values.
 
+**The operator viewpoint.** Write the solution operator as
+$G:\mu\mapsto u(\cdot;\mu)$. This method factors it as
+
+$$G = R\circ N,\qquad N:\mu\mapsto c\in\mathbb R^{r},\qquad R:c\mapsto \bar u+\Phi_r c,$$
+
+where $N$ is the small learned network (MLP or KAN) and $R$ is the *fixed, linear*
+reconstruction from the POD basis. The only learned object is the low-dimensional,
+smooth coefficient map $N$ ($2\to r$); the lift back to the field ($r\to N$, with
+$r\ll N$) is data-derived linear algebra. The boundary conditions and the dominant
+solution structure live entirely in $R$, so $N$ never has to learn them.
+
+![Operator factorisation G = R ∘ N](../figures/12_operator_diagram.png)
+
+**Relation to neural operators.** General operator learners — DeepONet and the
+Fourier Neural Operator (FNO) — also approximate $G$, but they learn the output
+representation *jointly* with the map: DeepONet's "trunk" network learns
+basis-like functions from data, and the FNO learns spectral multipliers on a fixed
+Fourier grid. Here $R$ is fixed *a priori* from the data (POD), which makes the
+learning problem tiny and interpretable and the boundary conditions exact — at the
+price of being tied to one geometry and parameterisation. That is the deliberate
+trade this report explores: **maximal structure for minimal learning.**
+
 **Boundary conditions for free.** Every snapshot vanishes on $\partial\Omega$, so
 the mean and all POD modes do too; hence every reconstruction satisfies the
 homogeneous Dirichlet condition *exactly*, by construction.
@@ -138,6 +160,68 @@ parameters than the direct MLP, a far smaller PDE residual (its predictions live
 in the physically meaningful subspace), and a large speed-up over the full-order
 solver. The POD truncation error at the chosen rank is orders of magnitude below
 the network error, confirming that the basis is *not* the bottleneck.
+
+### 8.1 Accuracy and residual vs rank
+
+Sweeping the retained rank $r$ (the output dimension of $N$) for both coefficient
+mappers (`scripts/11_rank_sweep.jl`):
+
+| Rank | POD-MLP rel L² | POD-MLP residual | POD-KAN rel L² | POD-KAN residual |
+| ---: | -------------: | ---------------: | -------------: | ---------------: |
+|    3 |       3.61e-03 |         2.76e-02 |       8.71e-03 |         7.95e-02 |
+|    5 |       3.65e-03 |         3.20e-02 |       6.92e-03 |         3.68e-02 |
+|   10 |       7.35e-03 |         1.34e-01 |       7.65e-03 |         1.82e-01 |
+|   20 |       1.61e-02 |         5.89e-01 |       1.03e-02 |         3.60e-01 |
+
+![Accuracy and residual vs rank](../figures/13_rank_sweep.png)
+
+Counter-intuitively, accuracy does **not** improve monotonically with rank — the
+best surrogates here use only $r=3$–$5$ modes. Because the POD reconstruction floor
+is already negligible at every rank (§4–5), extra modes do not help the basis; they
+only force the network to learn more coefficients, and the added modes are
+higher-frequency, so small errors in them inflate both the $L^2$ error and —
+especially — the PDE residual, which grows by an order of magnitude from $r=3$ to
+$r=20$. The sweet spot balances basis expressiveness against *learnability*. The
+KAN tracks the MLP throughout with far fewer parameters.
+
+### 8.2 Physics-informed residual loss (optional)
+
+Adding the differentiable PDE-residual term to the data loss (weight
+$\lambda_{\text{res}}$; `scripts/10_residual_ablation.jl`, $r=10$, 150-sample
+subset):
+
+| Model | rel L² | rel PDE residual |
+| --- | ---: | ---: |
+| POD-MLP (data loss only)              | 2.45e-2 | 5.34e-1 |
+| POD-MLP + residual loss ($\lambda=10^{-3}$) | 3.08e-2 | 4.70e-1 |
+
+The residual term trades a little $L^2$ accuracy for better physics consistency
+(larger $\lambda$ hurts both — see the full $\lambda$-sweep in the script). In
+Julia/Zygote the sparse operators $A(\mu)$ differentiate cleanly, so this needs no
+custom machinery; it is an optional extension, not the core method.
+
+### 8.3 Is POD the *right* basis?
+
+Replacing the POD basis with a sine (Laplacian-eigenfunction) basis or a random
+orthonormal basis at equal rank, sharing the same mean $\bar u$
+(`scripts/12_basis_comparison.jl`):
+
+| Basis (r=10) | reconstruction error | surrogate rel L² |
+| --- | ---: | ---: |
+| POD (data-optimal)  | 1.9e-06 | 9.1e-03 |
+| sine (Laplacian)    | 5.3e-03 | 1.1e-02 |
+| random orthonormal  | 5.8e-02 | 5.9e-02 |
+
+![Which basis is right?](../figures/14_basis_comparison.png)
+
+POD's data-optimality (Eckart–Young) gives by far the lowest reconstruction floor at
+every rank — $\sim\!10^{-6}$, versus $\sim\!10^{-3}$ for the sine basis and
+$\sim\!10^{-2}$ for the random one. A surrogate cannot beat its basis's
+reconstruction floor, so the **random basis caps accuracy at $\sim$6 %** — an order
+of magnitude worse. The analytic **sine** basis happens to suit this smooth,
+zero-boundary problem and is competitive at the surrogate level, but POD reaches the
+same accuracy *without being told the geometry* and with a floor thousands of times
+lower. The choice of basis, not the network, sets the ceiling.
 
 ## 9. Interactive console
 
