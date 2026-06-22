@@ -1,4 +1,6 @@
-# Reduced-Basis Neural Surrogates for Parametric Differential Equations
+# Learning PDE Solution Operators in the Right Basis
+
+**Reduced-Basis Neural Surrogates for Parametric Elliptic Equations**
 
 *A Treball de Recerca in scientific machine learning.*
 
@@ -8,6 +10,19 @@
 > solution manifold (fast-decaying Kolmogorov *n*-width / singular values), not
 > from the network architecture. The network only has to learn a smooth map from
 > the parameters to a handful of reduced-basis coefficients.
+
+## Abstract
+
+We test whether learning reduced-basis coefficients can outperform direct field
+prediction for a parametric elliptic PDE. **We found that for this smooth
+two-parameter elliptic PDE the solution manifold is extremely low rank: learning
+POD coefficients ($\mu\mapsto c$) beats direct field prediction ($\mu\mapsto u$) by
+a large margin** in accuracy, parameter count and PDE residual, and every
+reconstruction satisfies the boundary conditions exactly. The optimal rank is **not
+monotonic** - extra POD modes reduce the reconstruction error but can hurt
+learnability and the PDE residual, so the best surrogate here uses only $r\approx5$
+modes. This is a smooth, two-parameter problem on a fixed square domain, so the
+result is a **controlled prototype, not a general theorem.**
 
 ---
 
@@ -48,7 +63,7 @@ reduced-basis methods work.
 mean $\bar u$, the SVD $S-\bar u\mathbf 1^\top=\Phi\Sigma V^\top$ yields POD modes
 (columns of $\Phi$). By the **Eckart–Young–Mirsky** theorem, the rank-$r$
 truncation is the best rank-$r$ approximation in the Frobenius norm, and the
-projection error equals the tail energy $\sqrt{\sum_{i>r}\sigma_i^2}$ — an
+projection error equals the tail energy $\sqrt{\sum_{i>r}\sigma_i^2}$ - an
 *empirical, computable* upper bound on $d_r(\mathcal M)$.
 
 **Reduced-basis reconstruction.** Coefficients are
@@ -69,12 +84,12 @@ solution structure live entirely in $R$, so $N$ never has to learn them.
 
 ![Operator factorisation G = R ∘ N](../figures/12_operator_diagram.png)
 
-**Relation to neural operators.** General operator learners — DeepONet and the
-Fourier Neural Operator (FNO) — also approximate $G$, but they learn the output
+**Relation to neural operators.** General operator learners - DeepONet and the
+Fourier Neural Operator (FNO) - also approximate $G$, but they learn the output
 representation *jointly* with the map: DeepONet's "trunk" network learns
 basis-like functions from data, and the FNO learns spectral multipliers on a fixed
 Fourier grid. Here $R$ is fixed *a priori* from the data (POD), which makes the
-learning problem tiny and interpretable and the boundary conditions exact — at the
+learning problem tiny and interpretable and the boundary conditions exact - at the
 price of being tied to one geometry and parameterisation. That is the deliberate
 trade this report explores: **maximal structure for minimal learning.**
 
@@ -85,7 +100,7 @@ homogeneous Dirichlet condition *exactly*, by construction.
 **Coefficient mappers: MLP and KAN.** The map $\mu\mapsto c$ is smooth and
 low-dimensional. We learn it with a small multilayer perceptron (MLP) and, as an
 interpretable alternative, a Kolmogorov–Arnold network (KAN). KAN is *only* the
-coefficient mapper, not the whole operator — which keeps the method honest.
+coefficient mapper, not the whole operator - which keeps the method honest.
 
 ## 3. Numerical solver
 
@@ -100,10 +115,10 @@ Cholesky. See `src/pde_solver.jl`.
 Before trusting the solver as an oracle we validate it two ways
 (`test/`, `scripts/01_validate_solver.jl`):
 
-- **Unit tests** — `A` has the right shape, is symmetric and positive definite for
+- **Unit tests** - `A` has the right shape, is symmetric and positive definite for
   $a>0$, reduces to the 5-point Laplacian when $a\equiv1$, enforces $u|_{\partial\Omega}=0$,
   and produces solutions with tiny algebraic residual.
-- **Method of Manufactured Solutions** — with $u^\*=\sin\pi x\sin\pi y$ and
+- **Method of Manufactured Solutions** - with $u^\*=\sin\pi x\sin\pi y$ and
   $a=1+\tfrac14\sin\pi x\cos\pi y$, the measured $L^2$ error decreases at the
   second-order rate (observed $\approx 2.00$, acceptance band $[1.7,2.2]$).
 
@@ -113,7 +128,7 @@ Before trusting the solver as an oracle we validate it two ways
 
 We sample $M$ parameters with a Sobol sequence over $[-1,1]^2$, solve the
 full-order model for each (`scripts/02`), and compute the POD basis
-(`scripts/03`). The singular values collapse almost immediately — the keystone
+(`scripts/03`). The singular values collapse almost immediately - the keystone
 evidence for the low-rank thesis.
 
 ![Coefficient field](../figures/02_coefficient_field.png)
@@ -123,13 +138,21 @@ evidence for the low-rank thesis.
 
 ## 6. Neural surrogate models
 
-Three architectures, identical training data (`src/models.jl`, `scripts/04–06`):
+We compare **two surrogate strategies** on identical data (`src/models.jl`,
+`scripts/04–06`): direct field prediction, and reduced-basis coefficient learning.
+The reduced strategy learns a small coefficient map $N:\mu\mapsto c$, realised by
+**two interchangeable mappers** — an MLP and a KAN:
 
-| Model       | Map        | Output dim | Notes                                  |
-|-------------|------------|-----------:|----------------------------------------|
-| Direct MLP  | `μ ↦ u`    | $n^2$      | baseline; predicts the full field      |
-| POD-MLP     | `μ ↦ c`    | $r$        | reconstruct `û = ū + Φᵣc`              |
-| POD-KAN     | `μ ↦ c`    | $r$        | interpretable coefficient mapper (P1)  |
+| Strategy / model | Map | Output dim | Role |
+|---|---|--:|---|
+| Direct MLP | `μ ↦ u` | $n^2$ | baseline: predict the full field |
+| POD-MLP | `μ ↦ c` | $r$ | reduced-basis, **MLP** coefficient mapper |
+| POD-KAN | `μ ↦ c` | $r$ | reduced-basis, **KAN** coefficient mapper (compact baseline) |
+
+POD-MLP and POD-KAN are the *same method* with a different $N$: the KAN is a
+compact, interpretable **baseline mapper**, not a structural ingredient. Their
+near-identical accuracy (§8.1) is the point — the win comes from the basis $R$, not
+the mapper $N$.
 
 Training is full-batch Adam with a geometric learning-rate decay and best-iterate
 selection.
@@ -175,14 +198,31 @@ mappers (`scripts/11_rank_sweep.jl`):
 
 ![Accuracy and residual vs rank](../figures/13_rank_sweep.png)
 
-Counter-intuitively, accuracy does **not** improve monotonically with rank — the
+Counter-intuitively, accuracy does **not** improve monotonically with rank - the
 best surrogates here use only $r=3$–$5$ modes. Because the POD reconstruction floor
 is already negligible at every rank (§4–5), extra modes do not help the basis; they
 only force the network to learn more coefficients, and the added modes are
-higher-frequency, so small errors in them inflate both the $L^2$ error and —
-especially — the PDE residual, which grows by an order of magnitude from $r=3$ to
+higher-frequency, so small errors in them inflate both the $L^2$ error and -
+especially - the PDE residual, which grows by an order of magnitude from $r=3$ to
 $r=20$. The sweet spot balances basis expressiveness against *learnability*. The
 KAN tracks the MLP throughout with far fewer parameters.
+
+**Model selection.** The implication is concrete: the optimal reduced dimension is
+*not* the largest rank with small reconstruction error - it is the rank that
+balances reconstruction accuracy, learnability, and PDE residual, chosen by
+validation $L^2$ error and PDE residual, **not** by singular-value decay alone. Here
+that balance lands at very low rank, so we select **$r = 5$** as the deployed model
+(set `DEFAULT_R = 5` in `scripts/config.jl` and rerun `05`–`07`).
+
+**Why high modes hurt (mechanism).** A per-mode diagnostic
+(`scripts/14_mode_diagnostics.jl`) makes the non-monotonicity transparent: the
+coefficient signal $|c_i|$ decays quickly while the network's per-mode error decays
+much more slowly, so the *relative* coefficient error rises toward 1 (a
+signal-to-noise collapse); meanwhile the residual leverage $\lVert A\phi_i\rVert$
+grows with mode index because higher POD modes are higher-frequency. High modes are
+thus both the hardest to learn and the most heavily penalised in the PDE residual.
+
+![Mode-wise diagnostics](../figures/15_mode_diagnostics.png)
 
 ### 8.2 Physics-informed residual loss (optional)
 
@@ -196,7 +236,7 @@ subset):
 | POD-MLP + residual loss ($\lambda=10^{-3}$) | 3.08e-2 | 4.70e-1 |
 
 The residual term trades a little $L^2$ accuracy for better physics consistency
-(larger $\lambda$ hurts both — see the full $\lambda$-sweep in the script). In
+(larger $\lambda$ hurts both - see the full $\lambda$-sweep in the script). In
 Julia/Zygote the sparse operators $A(\mu)$ differentiate cleanly, so this needs no
 custom machinery; it is an optional extension, not the core method.
 
@@ -215,13 +255,38 @@ orthonormal basis at equal rank, sharing the same mean $\bar u$
 ![Which basis is right?](../figures/14_basis_comparison.png)
 
 POD's data-optimality (Eckart–Young) gives by far the lowest reconstruction floor at
-every rank — $\sim\!10^{-6}$, versus $\sim\!10^{-3}$ for the sine basis and
+every rank - $\sim\!10^{-6}$, versus $\sim\!10^{-3}$ for the sine basis and
 $\sim\!10^{-2}$ for the random one. A surrogate cannot beat its basis's
-reconstruction floor, so the **random basis caps accuracy at $\sim$6 %** — an order
+reconstruction floor, so the **random basis caps accuracy at $\sim$6 %** - an order
 of magnitude worse. The analytic **sine** basis happens to suit this smooth,
 zero-boundary problem and is competitive at the surrogate level, but POD reaches the
 same accuracy *without being told the geometry* and with a floor thousands of times
 lower. The choice of basis, not the network, sets the ceiling.
+
+### 8.4 Timing: latency vs throughput
+
+Benchmarked with `BenchmarkTools` (`scripts/13_benchmark.jl`, batch size = 100),
+separating single-query latency from batched throughput so neither is oversold:
+
+| Method | single-query (ms) | batched (ms/query) | single× | batched× | allocs (1-q) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| FOM solve  | 1.55  | -      | 1×   | -    | 100 |
+| direct MLP | 0.073 | 0.0056 | 21×  | 278× |  17 |
+| POD-MLP    | 0.011 | 0.0051 | 145× | 302× |  22 |
+| POD-KAN    | 0.010 | 0.0047 | 155× | 328× |  80 |
+
+*Method: median wall-clock over BenchmarkTools samples; batch size = 100. The
+batched column is per-query (batched median ÷ batch size). Reported speed-ups are
+**batched throughput over full-order solves, including reconstruction for POD
+models, excluding plotting and model loading, after warm-up.***
+
+The largest headline number - the batched-throughput speed-up - belongs to POD-KAN;
+since both reduced models share the *same* reconstruction step, that gap reflects the
+coefficient mapper and runtime implementation, not an omitted reconstruction cost.
+The honest summary: the surrogates cut single-query latency by a modest factor and
+batched throughput by a large one. Useful, but not the headline of the method -
+which is the *structure* (low-rank basis, exact BCs, small interpretable map), not
+the raw speed-up.
 
 ## 9. Interactive console
 
@@ -243,17 +308,35 @@ gives a data-optimal basis but not a structure-preserving one; with only two
 parameters the manifold is very low-dimensional, so results would be re-examined
 for higher-dimensional parameter spaces.
 
+**What the experiments prove.** Three things, concretely:
+
+1. **The basis does real work.** The direct MLP predicts a visually plausible field
+   but with a large PDE residual; the reduced models, constrained to the POD
+   subspace, stay physically consistent. Accuracy on its own would have hidden this.
+2. **The low-dimensional manifold is real.** That only 3–5 modes give the *best*
+   surrogate means the PDE family is even more compressed than the rank-20
+   singular-value plot suggests.
+3. **More basis modes are not free.** Every added mode is another target coefficient,
+   usually with worse signal-to-noise and higher residual leverage, so basis
+   expressiveness must be traded against learnability.
+
+**Conclusion.** The optimal reduced dimension is *not* the largest rank with small
+reconstruction error; it is the rank that balances reconstruction accuracy,
+learnability, and PDE residual. In this experiment that balance occurs at very low
+rank ($r\approx5$) - a small, interpretable surrogate that is faster, more accurate,
+and more physically consistent than predicting the field directly.
+
 ## 11. Future work
 
-- **Better solvers / inner products** — a proper finite-element method (e.g.
+- **Better solvers / inner products** - a proper finite-element method (e.g.
   `Gridap.jl`) and mass-matrix-weighted POD for non-uniform meshes.
 - **Structure-preserving bases (AFW / FEEC).** POD is data-optimal but ignores
   the differential structure (grad, curl, div; conservation laws; exact
   sequences). Finite Element Exterior Calculus (Arnold–Falk–Winther) builds
   discretisations that *do* respect this structure. Combining the reduced-basis
   idea with FEEC-compatible spaces points toward **structure-preserving neural
-  operators** — the "future cathedral" beyond this report.
-- **Physics-informed training** — adding the discrete PDE residual to the loss
+  operators** - the "future cathedral" beyond this report.
+- **Physics-informed training** - adding the discrete PDE residual to the loss
   (an optional ablation here, `λ_res`-weighted) rather than using it only as a
   metric.
 - **Neural operators** beyond coefficient maps.

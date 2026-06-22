@@ -2,7 +2,7 @@
 
 julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "db56cbb1da6228690c64009cb2b83d0290fa22b1"
+project_hash = "ed4fc95a9faf4fd8ac5b5bf39b103ff684d8c10a"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "bbc22a9a08a0ef6460041086d8a7b27940ed4ffd"
@@ -171,6 +171,12 @@ version = "1.11.0"
 git-tree-sha1 = "8c290a1b223deaeea9aea44b235d24546da8eb98"
 uuid = "18cc8868-cbac-4acf-b575-c8ff214dc66f"
 version = "1.4.0"
+
+[[deps.BenchmarkTools]]
+deps = ["Compat", "JSON", "Logging", "PrecompileTools", "Printf", "Profile", "Statistics", "UUIDs"]
+git-tree-sha1 = "9670d3febc2b6da60a0ae57846ba74670290653f"
+uuid = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+version = "1.8.0"
 
 [[deps.Bzip2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
@@ -1596,6 +1602,11 @@ deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 version = "1.11.0"
 
+[[deps.Profile]]
+deps = ["StyledStrings"]
+uuid = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
+version = "1.11.0"
+
 [[deps.ProgressMeter]]
 deps = ["Distributed", "Printf"]
 git-tree-sha1 = "fbb92c6c56b34e1a2c4c36058f68f332bec840e7"
@@ -1673,7 +1684,7 @@ uuid = "c1ae055f-0cd5-4b69-90a6-9a35b1a98df9"
 version = "0.1.0"
 
 [[deps.ReducedBasisSurrogates]]
-deps = ["CairoMakie", "ComponentArrays", "ForwardDiff", "GLMakie", "JLD2", "LinearAlgebra", "Lux", "Makie", "Optimisers", "Printf", "ProgressMeter", "QuasiMonteCarlo", "Random", "SparseArrays", "StableRNGs", "Statistics", "Test", "Zygote"]
+deps = ["CairoMakie", "ComponentArrays", "ForwardDiff", "GLMakie", "JLD2", "KolmogorovArnold", "LinearAlgebra", "Lux", "Makie", "Optimisers", "Printf", "ProgressMeter", "QuasiMonteCarlo", "Random", "SparseArrays", "StableRNGs", "Statistics", "Test", "Zygote"]
 path = "."
 uuid = "a7e3d4c2-1b6f-4e8a-9c2d-3f5a6b7c8d9e"
 version = "0.1.0"

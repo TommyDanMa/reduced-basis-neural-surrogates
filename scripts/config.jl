@@ -21,7 +21,7 @@ const TEST_FRAC = 0.2           # held-out fraction
 const PARAM_LO  = -1.0          # μ lower bound (keeps a(x,y;μ) ≥ 0.5 > 0)
 const PARAM_HI  =  1.0          # μ upper bound
 const RANKS     = (5, 10, 20)   # POD truncations to compare
-const DEFAULT_R = 10            # rank used by the trained coefficient models
+const DEFAULT_R = 5             # rank of the deployed coefficient models (selected by §8.1 sweep)
 const SEED      = 20240601
 
 # ----- file locations -----------------------------------------------------------

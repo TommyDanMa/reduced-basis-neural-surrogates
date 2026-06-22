@@ -10,7 +10,7 @@ pod = load_pod()
 g = make_grid(d["grid_n"])
 Xte, Ute = d["mu_test"], d["U_test"]
 μte = [collect(c) for c in eachcol(Xte)]
-r = DEFAULT_R
+r = 10          # fixed: this ablation is reported at r=10, independent of DEFAULT_R
 
 nsub = 150
 Xs = d["mu_train"][:, 1:nsub]

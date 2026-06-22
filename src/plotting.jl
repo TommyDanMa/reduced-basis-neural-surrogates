@@ -114,6 +114,32 @@ function basis_comparison_figure(ranks, pod_errs, sine_errs, rand_errs)
 end
 
 """
+    mode_diagnostics_figure(idx, sig, err, relerr, leverage)
+
+Per-mode diagnostics explaining the non-monotonic rank result: the coefficient
+signal `|cᵢ|` decays fast while the prediction error decays slowly (left), so the
+relative coefficient error rises toward 1; combined with the residual leverage
+`‖Aφᵢ‖`, which also grows with mode index (right), high modes both are harder to
+learn and punish the PDE residual more.
+"""
+function mode_diagnostics_figure(idx, sig, err, relerr, leverage)
+    fig = Figure(; size = (1000, 410))
+    ax1 = Axis(fig[1, 1]; yscale = log10, xlabel = "mode index i", ylabel = "magnitude",
+               title = "Coefficient signal vs prediction error")
+    scatterlines!(ax1, idx, sig; color = :black, markersize = 8, label = "|cᵢ|  (signal)")
+    scatterlines!(ax1, idx, err; color = :orange, markersize = 8, label = "|ĉᵢ − cᵢ|  (error)")
+    axislegend(ax1; position = :lb)
+    ax2 = Axis(fig[1, 2]; yscale = log10, xlabel = "mode index i",
+               title = "Why high modes hurt the residual")
+    scatterlines!(ax2, idx, relerr; color = :crimson, markersize = 8,
+                  label = "rel. coeff error |Δcᵢ|/(|cᵢ|+ε)")
+    scatterlines!(ax2, idx, leverage; color = :teal, markersize = 8,
+                  label = "residual leverage ‖Aφᵢ‖ / ‖Aφ₁‖")
+    axislegend(ax2; position = :rb)
+    return fig
+end
+
+"""
     operator_diagram(mode_imgs, xs; r, N)
 
 Schematic of the factorisation `G = R ∘ N`: parameters → coefficients → field, with

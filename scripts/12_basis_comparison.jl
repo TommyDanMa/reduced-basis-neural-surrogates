@@ -15,6 +15,7 @@ Xtr, Utr = d["mu_train"], d["U_train"]
 Xte, Ute = d["mu_test"], d["U_test"]
 n = ndof(g)
 maxr = 30
+BASIS_R = 10    # representative rank for the surrogate comparison (independent of BASIS_R)
 
 # --- sine (Laplacian eigenfunction) basis: φ_{ij} ∝ sin(iπx)sin(jπy) -------------
 xs = interior_coords(g)
@@ -39,9 +40,9 @@ pod_errs  = recon_err_curve(P.modes, Ute, P.mean, ranks)
 sine_errs = recon_err_curve(B_sine, Ute, P.mean, ranks)
 rand_errs = recon_err_curve(B_rand, Ute, P.mean, ranks)
 
-# --- surrogate accuracy at r = DEFAULT_R for each basis ---------------------------
+# --- surrogate accuracy at r = BASIS_R for each basis ---------------------------
 function surrogate_l2(B)
-    r = DEFAULT_R
+    r = BASIS_R
     basis = PODBasis(P.mean, Matrix(B[:, 1:r]), ones(r))
     Ctr = project(basis, Utr, r)
     m, ps, st = build_pod_mlp(r; rng = StableRNG(SEED + 400))
@@ -52,17 +53,17 @@ end
 pod_surr, sine_surr, rand_surr = surrogate_l2(P.modes), surrogate_l2(B_sine), surrogate_l2(B_rand)
 
 # --- report ---------------------------------------------------------------------
-ri = findfirst(==(DEFAULT_R), ranks)
-println("\nReconstruction error at r = $DEFAULT_R (test):")
+ri = findfirst(==(BASIS_R), ranks)
+println("\nReconstruction error at r = $BASIS_R (test):")
 @printf("  POD = %.3e   sine = %.3e   random = %.3e\n", pod_errs[ri], sine_errs[ri], rand_errs[ri])
-println("\n| Basis (r=$DEFAULT_R)        | recon error | surrogate rel L² |")
+println("\n| Basis (r=$BASIS_R)        | recon error | surrogate rel L² |")
 println("| --------------------- | ----------: | ---------------: |")
 @printf("| POD (data-optimal)    | %.3e | %.3e |\n", pod_errs[ri], pod_surr)
 @printf("| sine (Laplacian)      | %.3e | %.3e |\n", sine_errs[ri], sine_surr)
 @printf("| random orthonormal    | %.3e | %.3e |\n", rand_errs[ri], rand_surr)
 
 jldsave(joinpath(DATA_DIR, "basis.jld2"); ranks, pod_errs, sine_errs, rand_errs,
-        default_r = DEFAULT_R, pod_surr, sine_surr, rand_surr)
+        default_r = BASIS_R, pod_surr, sine_surr, rand_surr)
 save(joinpath(FIG_DIR, "14_basis_comparison.png"),
      basis_comparison_figure(ranks, pod_errs, sine_errs, rand_errs))
 println("\nsaved data/basis.jld2 and figures/14_basis_comparison.png")
