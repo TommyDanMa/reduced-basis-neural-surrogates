@@ -348,4 +348,26 @@ and more physically consistent than predicting the field directly.
 
 ## References
 
-See `refs.bib`.
+- Quarteroni, Manzoni & Negri, *Reduced Basis Methods for Partial Differential Equations:
+  An Introduction*, Springer UNITEXT 92, 2016.
+- Hesthaven, Rozza & Stamm, *Certified Reduced Basis Methods for Parametrized Partial
+  Differential Equations*, SpringerBriefs in Mathematics, Springer, 2016.
+- Bachmayr & Cohen, *Kolmogorov widths and low-rank approximations of parametric elliptic
+  PDEs*, Mathematics of Computation 86(304), 701–724, 2017.
+- Berkooz, Holmes & Lumley, *The proper orthogonal decomposition in the analysis of
+  turbulent flows*, Annual Review of Fluid Mechanics 25, 539–575, 1993.
+- Eckart & Young, *The approximation of one matrix by another of lower rank*,
+  Psychometrika 1(3), 211–218, 1936.
+- Arnold, Falk & Winther, *Finite element exterior calculus, homological techniques, and
+  applications*, Acta Numerica 15, 1–155, 2006.
+- Lu, Jin, Pang, Zhang & Karniadakis, *Learning nonlinear operators via DeepONet based on
+  the universal approximation theorem of operators*, Nature Machine Intelligence 3,
+  218–229, 2021.
+- Kovachki, Li, Liu, Azizzadenesheli, Bhattacharya, Stuart & Anandkumar, *Neural operator:
+  Learning maps between function spaces with applications to PDEs*, Journal of Machine
+  Learning Research 24(89), 1–97, 2023.
+- Liu, Wang, Vaidya, Ruehle, Halverson, Soljačić, Hou & Tegmark, *KAN: Kolmogorov-Arnold
+  Networks*, arXiv:2404.19756, 2024.
+- Somvanshi et al., *A Survey on Kolmogorov-Arnold Networks*, arXiv:2507.22959, 2025.
+- Pal, *Lux.jl: Explicit Parameterization of Deep Neural Networks in Julia*,
+  arXiv:2302.14253, 2023.

@@ -69,8 +69,10 @@ julia --project=. scripts/09_run_console.jl
 pick a model, move the rank slider, and every panel updates live - the coefficient
 field, the true (re-solved) and predicted solutions, the error and PDE-residual
 heatmaps, the singular-value spectrum, a parameter-space minimap and timing/error
-read-outs. A static preview is `figures/11_dashboard.png`; the in-app **save
-screenshot** button writes `figures/console_screenshot.png`.
+read-outs. The in-app **save screenshot** button writes
+`figures/console_screenshot.png`. What to expect:
+
+![Live-calibration console (static preview)](figures/11_dashboard.png)
 
 ## Repository layout
 
