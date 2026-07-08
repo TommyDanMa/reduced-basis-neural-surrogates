@@ -1,5 +1,0 @@
-# Generated data artifacts (regenerable via scripts/)
-/data/
-
-# VTK output from the early draft solver
-*.vtu
