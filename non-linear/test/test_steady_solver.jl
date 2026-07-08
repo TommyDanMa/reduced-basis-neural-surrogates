@@ -33,4 +33,16 @@
     s_warm = solve_steady(fom_b, (0.52, 460.0); u0 = s_newton.x)
     @test s_warm.converged
     @test s_warm.nsteps <= s_newton.nsteps
+
+    # k-override: interior linearity means (Q, k) enter the particular solution
+    # only through Q/k, and the radiative level is k-free, so doubling both Q
+    # and k must reproduce the doubled-load shape scaled consistently; here we
+    # just pin that the override is wired: k = 2*cfg.k halves the conduction
+    # temperature rise above the (k-free) edge equilibrium level.
+    s_k1 = solve_steady(fom_b; eps_r = 0.5, Q = 450.0)
+    s_k2 = solve_steady(fom_b; eps_r = 0.5, Q = 450.0, k = 2 * fom_b.cfg.k)
+    rise1 = maximum(s_k1.x) - minimum(s_k1.x)
+    rise2 = maximum(s_k2.x) - minimum(s_k2.x)
+    @test s_k2.converged
+    @test isapprox(rise2, rise1 / 2; rtol = 0.05)
 end

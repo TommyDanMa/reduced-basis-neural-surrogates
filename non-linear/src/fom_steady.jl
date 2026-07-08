@@ -88,9 +88,10 @@ Weak residual `(u, v) ↦ R(u; v)`:
 analytic hooks for manufactured solutions.
 """
 function steady_form(fom::SteadyFOM; eps_r::Real, Q::Real = 0.0,
-                     f = nothing, g = nothing)
+                     f = nothing, g = nothing, k = nothing)
     cfg = fom.cfg
-    k, σ, Ts4 = cfg.k, cfg.sigma, cfg.T_space^4
+    k = k === nothing ? cfg.k : Float64(k)   # per-solve conductivity override
+    σ, Ts4 = cfg.sigma, cfg.T_space^4
     qpatch = source_fn(cfg, Q)
     fq = f === nothing ? qpatch : (x -> qpatch(x) + f(x))
     gb = g === nothing ? (x -> 0.0) : g
@@ -108,9 +109,9 @@ NonlinearSolve. `u0` warm-starts Newton (vector of free DOFs); `hist` records
 ‖R‖₂ at every residual evaluation. `alg = nothing` picks `NewtonRaphson()`.
 """
 function solve_steady(fom::SteadyFOM; eps_r::Real, Q::Real = 0.0,
-                      f = nothing, g = nothing, u0 = nothing,
+                      f = nothing, g = nothing, k = nothing, u0 = nothing,
                       alg = nothing, abstol::Real = 1e-8, maxiters::Int = 50)
-    res = steady_form(fom; eps_r, Q, f, g)
+    res = steady_form(fom; eps_r, Q, f, g, k)
     op = FEOperator(res, fom.U, fom.V)
     aop = Gridap.FESpaces.get_algebraic_operator(op)
 

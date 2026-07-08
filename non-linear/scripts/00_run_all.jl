@@ -26,7 +26,10 @@ scripts = [
     "15_robustness.jl",
     "16_grid_independence.jl",
     "17_mapper_diagnostics.jl",
-    "18_report_numbers.jl",
+    "19_rank_prediction.jl",
+    "20_statistics.jl",
+    "21_galerkin_floor.jl",
+    "18_report_numbers.jl",   # last: prints every table for diffing against the report
 ]
 
 t_total = time()

@@ -88,5 +88,35 @@ if need(joinpath(DATA_DIR, "mapper_diagnostics.jld2"))
     for (M, e) in zip(md_["sizes"], md_["lc"])
         @printf("| %d trajectories | %.2e |\n", M, e)
     end
-    @printf("slopes: %s\n", join((@sprintf("%.2f", s) for s in md_["slopes"]), "  "))
+    @printf("slopes: %s\n\n", join((@sprintf("%.2f", s) for s in md_["slopes"]), "  "))
+end
+
+if need(joinpath(DATA_DIR, "rank_prediction.jld2"))
+    rp = load(joinpath(DATA_DIR, "rank_prediction.jld2"))
+    println("## §5 rank predictions (note §4)")
+    @printf("P1 (ε,Q1,Q2): σ3 %.1e  σ4 %.1e  σ5 %.1e\n",
+            rp["d_p1"][3], rp["d_p1"][4], rp["d_p1"][5])
+    @printf("P2 (ε,Q,k):   σ3 %.1e  σ4 %.1e\n", rp["d_p2"][3], rp["d_p2"][4])
+    @printf("P3 σ3 ε-shrink: %s | Q-shrink: %s\n\n",
+            join((@sprintf("%.1e", v) for v in rp["sig3_eps"]), " "),
+            join((@sprintf("%.1e", v) for v in rp["sig3_Q"]), " "))
+end
+
+if need(joinpath(DATA_DIR, "statistics.jld2"))
+    st = load(joinpath(DATA_DIR, "statistics.jld2"))
+    println("## §8.7 statistics (B = $(st["nboot"]))")
+    for c in st["sp_cis"]
+        @printf("Spearman (Qp=%.0f): %.4f [%.4f, %.4f]\n", c[:Qp], c[:m], c[:lo], c[:hi])
+    end
+    @printf("ablations r=%d: whitening off %.2e | random basis %.2e (floor %.2e)\n\n",
+            DEFAULT_R, st["e_raw"], st["e_rand"], st["floor_rand"])
+end
+
+if need(joinpath(DATA_DIR, "galerkin_floor.jld2"))
+    gf = load(joinpath(DATA_DIR, "galerkin_floor.jld2"))
+    println("## §8.1 error decomposition")
+    for (i, r) in enumerate(gf["ranks"])
+        @printf("| %d | %.2e | %.2e | %.2e |\n", r,
+                gf["proj_floor"][i], gf["gal_rel"][i], gf["mlp_rel"][i])
+    end
 end

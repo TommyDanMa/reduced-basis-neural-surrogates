@@ -153,6 +153,19 @@ $6.8\cdot10^{-9}$ (60×30, P2), against $7.2\cdot10^{-9}$ at the baseline
 
 ![Grid independence of the σ-decay](../figures/17_grid_independence.png)
 
+**A predictive rank estimate (pre-registered).** The collapse follows from two structural
+facts: the interior equation is linear, so each load shape contributes one exact manifold
+direction and $(Q, k)$ enter the particular solution only through $Q/k$; and the harmonic
+remainder, driven by near-uniform radiating-edge flux, spans very few shapes. Three tests
+were pre-registered in `notes/rank-note.md` before running
+`scripts/19_rank_prediction.jl`: a second heater patch adds exactly one real mode (the
+cliff moves to $\sigma_4/\sigma_1 = 8.3\cdot10^{-6}$); conductivity as a third parameter
+adds **none** ($\sigma_4/\sigma_1 = 3\cdot10^{-14}$, where naive parameter counting
+predicts a fourth $O(\sigma_2)$ mode); and the box-shrink scaling came out sub-quadratic
+(slopes 0.2–0.7 instead of the predicted [1, 2]), a miss recorded as such in the note.
+
+![Rank predictions](../figures/20_rank_prediction.png)
+
 Mechanism: with the load geometry fixed, varying $Q$ scales the (linear)
 source-response shape exactly, and varying $\varepsilon$ mostly moves the radiative
 equilibrium *level*, a strongly nonlinear scalar multiplying the constant mode. Strong
@@ -210,6 +223,23 @@ five to six orders below the network error; *the basis is not the bottleneck*, i
 more extreme form than the parent project. The direct MLP's residual (38.7: its fields
 violate the discretized PDE badly despite a decent L² error) is the physics-consistency gap
 in one number.
+
+**Error decomposition via the exact Galerkin floor** (`scripts/21_galerkin_floor.jl`).
+Solving the exact reduced-Galerkin system (Newton on $\Phi_r^\top R(\bar u + \Phi_r c) =
+0$; at $n = 1891$ no hyper-reduction is needed offline, DEIM being the online path) bounds
+any surrogate confined to the POD subspace. Mean over the 102 test parameters:
+
+| rank | L² projection floor | Galerkin floor | POD-MLP error | map share |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 1.7e-2 | 2.4e-2 | 1.7e-2 | basis-limited |
+| **2** | 1.14e-9 | **1.14e-9** | 9.2e-4 | **100.00%** |
+| 3 | 6.2e-16 | 2.8e-13 | 1.3e-3 | 100.00% |
+| 5 | 1.8e-16 | 2.8e-13 | 1.7e-3 | 100.00% |
+
+At and above the manifold rank the Galerkin floor equals the projection floor, so the
+deployed surrogate's error is 100.00% coefficient-map error; below it (r = 1) the mapper
+already sits at the basis floor. The crossover tells you, per rank, whether to spend
+effort on the basis or on the map.
 
 Rank sweep (rel L² / residual):
 
@@ -389,6 +419,17 @@ a physically sensible ring (ε down to 0.02, Q up to 1000 W/m), the median error
 `in_training_box(ε, Q)` in `scripts/config.jl` is the guard; the honest usage contract is:
 screen inside the box, and hand anything near the boundary to the FOM.
 
+**Confidence intervals and ablations** (`scripts/20_statistics.jl`; 10,000-resample
+bootstraps, StableRNG(SEED+9000)). Design-ranking Spearman: 0.9984 [0.9960, 0.9994] at
+OP1 and 0.9983 [0.9965, 0.9992] at OP2 (N = 100 designs each). Paired per-sample
+differences on the same 102 test parameters: KAN − MLP = +2.0e-3 [1.6, 2.4]e-3 and
+direct − MLP = +4.9e-3 [4.4, 5.4]e-3 rel L²; both intervals exclude zero, so the model
+ordering is not seed luck. Ablations at r = 2: turning whitening **off** (same seed)
+degrades the mapper 200× to 2.1e-1, and swapping in a random orthonormal basis caps
+accuracy at exactly its own projection floor (2.13e-1): whitening is load-bearing and the
+basis choice sets the ceiling. The full StableRNG seed table is printed by the script and
+in `data/statistics.jld2`.
+
 ![Seed robustness and OOD degradation](../figures/16_robustness.png)
 
 ## 9. Interactive console
@@ -425,12 +466,17 @@ the steady manifold (future work).
 
 ## 11. Future work
 
-Thin-plate fin variant (radiation as a volumetric $2\varepsilon\sigma(u^4 - T_s^4)/t$ sink;
-same Newton machinery); parametric load geometry; view factors and orbital environment
-(solar/albedo as boundary sources); latent dynamics for $c(t)$ via the SciML stack (neural
-ODE / operator inference) instead of the $(\mu, t)$ regression; residual-informed training
-through the assembled nonlinear residual; unstructured GridapGmsh geometries; 3D;
-mass-matrix-weighted POD.
+Next in line, with a pre-registered prediction already on file: a **DeepONet baseline**
+(NeuralOperators.jl, branch on $\tilde\mu$, trunk on $x$, same snapshots and budget, plus a
+3× parameter-count variant). Registered wedge: at matched budgets DeepONet should be
+competitive on rel L² but worse on PDE residual and sample efficiency at 410 snapshots;
+note that the parent project's exact-BC wedge does **not** apply here (config B has no
+Dirichlet BC). Then: thin-plate fin variant (radiation as a volumetric
+$2\varepsilon\sigma(u^4 - T_s^4)/t$ sink; same Newton machinery); parametric load
+geometry; view factors and orbital environment (solar/albedo as boundary sources); latent
+dynamics for $c(t)$ via the SciML stack (neural ODE / operator inference) instead of the
+$(\mu, t)$ regression; full DEIM for online reduced-Galerkin; residual-informed training;
+unstructured GridapGmsh geometries; 3D; mass-matrix-weighted POD.
 
 ## References
 
@@ -438,5 +484,7 @@ mass-matrix-weighted POD.
 - NonlinearSolve.jl / OrdinaryDiffEq.jl: Pal et al. 2024; Rackauckas & Nie 2017.
 - Reduced-basis methods: Quarteroni, Manzoni & Negri, *Reduced Basis Methods for PDEs*, 2016.
 - DEIM: Chaturantabut & Sorensen, SIAM J. Sci. Comput. 2010.
+- Operator inference: Peherstorfer & Willcox, Comput. Methods Appl. Mech. Eng. 2016.
 - Kolmogorov–Arnold networks: Liu et al., 2024; `KolmogorovArnold.jl`.
-- Parent project: `../report/report.md`, *Learning PDE Solution Operators in the Right Basis*.
+- Parent project: [TommyDanMa/afw](https://github.com/TommyDanMa/afw), *Learning PDE
+  Solution Operators in the Right Basis* (report in `report/report.md` there).

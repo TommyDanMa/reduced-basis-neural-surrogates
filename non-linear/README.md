@@ -1,9 +1,10 @@
 # RadiativeSurrogates: reduced-basis neural surrogates with a nonlinear radiation BC
 
-*(Non-specialists: start with the repo-level [EXPLAINER.md](../EXPLAINER.md), a
-plain-language tour of both projects.)*
+*(Non-specialists: start with [EXPLAINER.md](EXPLAINER.md), a plain-language tour.)*
 
-Sub-project of the reduced-basis repo: the heat equation on a 2D radiator section whose
+This project grew out of [TommyDanMa/afw](https://github.com/TommyDanMa/afw), where the
+linear-elliptic reduced-basis study (a *Treball de Recerca*) lives; this repo is the
+standalone continuation. The problem: the heat equation on a 2D radiator section whose
 dominant heat rejection is **Stefan–Boltzmann radiation to deep space** (T_space = 3 K),
 with parametric emissivity ε and electronics load cycles, a controlled prototype for
 AI1-class orbital-compute thermal design (`docs/images/`). **Gridap assembles, SciML
@@ -30,17 +31,24 @@ transients.
 ## Quickstart
 
 ```bash
-julia --project=non-linear -e 'using Pkg; Pkg.instantiate()'
-julia --project=non-linear non-linear/test/runtests.jl        # test suite (CI runs this too)
-julia --project=non-linear non-linear/scripts/00_run_all.jl   # full reproduction, ~2 h
+julia --project=. -e 'using Pkg; Pkg.instantiate()'
+julia --project=. test/runtests.jl              # test suite (CI runs this too)
+julia --project=. scripts/00_run_all.jl         # full reproduction, ~2 h
 # or step through scripts/01 ... 18 individually; the live console:
-julia --project=non-linear non-linear/scripts/14_run_console.jl
+julia --project=. scripts/14_run_console.jl
 ```
 
 `scripts/18_report_numbers.jl` reprints every headline table straight from `data/*.jld2`,
 so the report can always be diffed against the data. Programmatic queries outside the
 training box should check `in_training_box(ε, Q)`; measured out-of-distribution
 degradation is in the report's robustness section.
+
+**The two-page technical note** distilling the project's core finding is
+[notes/rank-note.md](notes/rank-note.md): a predictive argument for why the steady
+manifold is rank three, with pre-registered tests (a second heater adds exactly one mode;
+conductivity adds none, where naive parameter counting says it should; the box-scaling
+prediction missed, and the miss is reported), plus the exact-Galerkin error decomposition
+showing that 100.00% of the deployed surrogate's error is coefficient-map error at r = 2.
 
 The console solves the steady FOM live while you drag ε and Q (a 50 ms Newton solve is
 interactive), next to the surrogate, the error field, QoI readouts and both σ-spectra; the
