@@ -2,7 +2,9 @@
 
 This page explains what this repository does for readers who are not numerical analysts:
 teachers, classmates, family, anyone curious. The technical write-ups live in
-`report/report.md` and `non-linear/report/report.md`; everything there is also true here,
+`report/report.md` here and in the sister repository
+[RadiativeSurrogates.jl](https://github.com/TommyDanMa/RadiativeSurrogates.jl);
+everything there is also true here,
 just said with fewer symbols.
 
 ## The problem, in one paragraph
@@ -31,7 +33,7 @@ face as "the average face, plus 30% of variation A, minus 10% of variation B" in
 listing every pixel. The heavy lifting is done by choosing the right shapes; the network's
 job becomes small and easy.
 
-## The two projects in this repository
+## The two projects
 
 **1. The square plate (the original Treball de Recerca).** A heated square plate whose
 material properties depend on two dials. Result: the tiny slider-predicting network is
@@ -40,7 +42,9 @@ thirteen times fewer learnable numbers, and its answers respect the physics far 
 A surprise worth remembering: giving the method *more* shapes eventually makes it *worse*,
 because the extra sliders are so faint that the network ends up learning noise.
 
-**2. The space radiator (`non-linear/`).** Computers in orbit can only get rid of heat by
+**2. The space radiator
+([RadiativeSurrogates.jl](https://github.com/TommyDanMa/RadiativeSurrogates.jl),
+its own repository).** Computers in orbit can only get rid of heat by
 glowing it away as radiation; there is no air in space. Radiation is a genuinely harder
 kind of physics (the heat loss grows with the *fourth power* of temperature), and it is
 the exact problem faced by the new generation of orbital data centres. We simulate a 2D

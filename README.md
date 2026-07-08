@@ -6,9 +6,13 @@ A Julia project (a *Treball de Recerca* in scientific machine learning) that lea
 the solution operator of a parametric elliptic PDE **efficiently** by predicting a
 handful of reduced-basis coefficients instead of every grid value.
 
-> New to this? **[EXPLAINER.md](EXPLAINER.md)** is a plain-language tour of both
-> projects in this repo (this one and `non-linear/`), written so that no equations
-> are needed to follow the ideas and the results.
+> New to this? **[EXPLAINER.md](EXPLAINER.md)** is a plain-language tour, written so
+> that no equations are needed to follow the ideas and the results.
+
+> **Sequel:** the nonlinear continuation of this work (radiative-BC heat surrogates
+> for orbital compute, Gridap × SciML) grew up here as `non-linear/` and now lives in
+> its own repository:
+> [TommyDanMa/RadiativeSurrogates.jl](https://github.com/TommyDanMa/RadiativeSurrogates.jl).
 
 ## TL;DR
 

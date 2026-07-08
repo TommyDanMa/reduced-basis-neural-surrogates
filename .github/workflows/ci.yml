@@ -20,18 +20,3 @@ jobs:
         run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
       - name: Run tests
         run: julia --project=. test/runtests.jl
-
-  nonlinear-tests:
-    name: non-linear test suite
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
-        with:
-          version: '1.12'
-      - uses: julia-actions/cache@v2
-      - name: Instantiate
-        run: julia --project=non-linear -e 'using Pkg; Pkg.instantiate()'
-      - name: Run tests
-        run: julia --project=non-linear non-linear/test/runtests.jl
