@@ -6,6 +6,10 @@ A Julia project (a *Treball de Recerca* in scientific machine learning) that lea
 the solution operator of a parametric elliptic PDE **efficiently** by predicting a
 handful of reduced-basis coefficients instead of every grid value.
 
+> New to this? **[EXPLAINER.md](EXPLAINER.md)** is a plain-language tour of both
+> projects in this repo (this one and `non-linear/`), written so that no equations
+> are needed to follow the ideas and the results.
+
 ## TL;DR
 
 - **Question.** Can reduced-basis coefficient learning outperform direct field prediction for a parametric elliptic PDE?
@@ -72,7 +76,7 @@ heatmaps, the singular-value spectrum, a parameter-space minimap and timing/erro
 read-outs. The in-app **save screenshot** button writes
 `figures/console_screenshot.png`. What to expect:
 
-![Live-calibration console (static preview)](figures/11_dashboard.png)
+![Live-calibration console (static preview)](figures/console_screenshot.png)
 
 ## Repository layout
 

@@ -54,6 +54,7 @@ end
 
 "Reshape a nodal vector to an (nx+1)×(ny+1) matrix on the structured grid."
 function to_grid(fom::SteadyFOM, vals::AbstractVector)
+    @assert !isempty(fom.gi) "to_grid/edge_profile require P1 elements (order = 1)"
     A = Matrix{Float64}(undef, fom.cfg.nx + 1, fom.cfg.ny + 1)
     @inbounds for d in eachindex(vals)
         A[fom.gi[d], fom.gj[d]] = vals[d]

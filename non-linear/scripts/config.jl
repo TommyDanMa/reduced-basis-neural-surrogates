@@ -50,6 +50,13 @@ standardize_mu_t(eps_r, Qp, duty, period) =
     (standardize(eps_r, EPS_RANGE...), standardize(Qp, Q_RANGE...),
      standardize(duty, DUTY_RANGE...), standardize(period, PERIOD_RANGE...))
 
+"Is a steady query inside the training box? Surrogate error is unquantified outside
+(measured OOD degradation: scripts/15_robustness.jl, report §8.7)."
+in_training_box(eps_r, Q) =
+    EPS_RANGE[1] <= eps_r <= EPS_RANGE[2] && Q_RANGE[1] <= Q <= Q_RANGE[2]
+warn_if_ood(eps_r, Q) = in_training_box(eps_r, Q) ||
+    @warn "query outside the training box; surrogate error is unquantified there" eps_r Q
+
 """
 Network input for the space-time mapper at saved state `j` (1-based): the four
 standardized parameters, normalized time 2τ−1, and two phase harmonics (the

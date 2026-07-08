@@ -55,13 +55,21 @@ function build_steady_fom(cfg::RadiativeConfig)
 
     # Nodal DOF → structured-grid index map, recovered by interpolating the
     # coordinate functions (robust to whatever DOF ordering Gridap uses).
-    xv = get_free_dof_values(interpolate_everywhere(x -> x[1], Un))
-    yv = get_free_dof_values(interpolate_everywhere(x -> x[2], Un))
-    hx, hy = cfg.Lx / cfg.nx, cfg.Ly / cfg.ny
-    gi = round.(Int, xv ./ hx) .+ 1
-    gj = round.(Int, yv ./ hy) .+ 1
-    @assert maximum(abs.(xv .- (gi .- 1) .* hx)) < 1e-9 "nodal x-coords off grid"
-    @assert maximum(abs.(yv .- (gj .- 1) .* hy)) < 1e-9 "nodal y-coords off grid"
+    # P1 only: higher orders place DOFs off the vertex grid, so grid extraction
+    # (`to_grid`, `edge_profile`) is unavailable there; POD on raw DOF vectors
+    # still works.
+    if cfg.order == 1
+        xv = get_free_dof_values(interpolate_everywhere(x -> x[1], Un))
+        yv = get_free_dof_values(interpolate_everywhere(x -> x[2], Un))
+        hx, hy = cfg.Lx / cfg.nx, cfg.Ly / cfg.ny
+        gi = round.(Int, xv ./ hx) .+ 1
+        gj = round.(Int, yv ./ hy) .+ 1
+        @assert maximum(abs.(xv .- (gi .- 1) .* hx)) < 1e-9 "nodal x-coords off grid"
+        @assert maximum(abs.(yv .- (gj .- 1) .* hy)) < 1e-9 "nodal y-coords off grid"
+    else
+        gi = Int[]
+        gj = Int[]
+    end
 
     n = num_free_dofs(U)
     n_nodes = num_free_dofs(Un)

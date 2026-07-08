@@ -13,4 +13,5 @@ using NonlinearSolve
     include("test_analytic_equilibrium.jl")
     include("test_transient.jl")
     include("test_pod_models.jl")
+    include("test_deployed_models.jl")
 end

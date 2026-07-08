@@ -1,5 +1,8 @@
 # RadiativeSurrogates: reduced-basis neural surrogates with a nonlinear radiation BC
 
+*(Non-specialists: start with the repo-level [EXPLAINER.md](../EXPLAINER.md), a
+plain-language tour of both projects.)*
+
 Sub-project of the reduced-basis repo: the heat equation on a 2D radiator section whose
 dominant heat rejection is **Stefan–Boltzmann radiation to deep space** (T_space = 3 K),
 with parametric emissivity ε and electronics load cycles, a controlled prototype for
@@ -18,7 +21,8 @@ transients.
   FOM. Load-cycle *transients* re-thicken the manifold (σ₈/σ₁ ≈ 3e-5 vs the steady cliff),
   and the (μ, t) ↦ c surrogate, an honest 1.5–1.7% on raw trajectories, reproduces
   full-order **design rankings** on a 10×10 (ε, duty) grid: Spearman 0.999, top-5 overlap
-  5/5, identical optimum, QoI error median 2.4 K on a 382–785 K range, 373× end-to-end.
+  5/5, identical optimum, QoI error median 2.4 K on a 382–785 K range, 353× end-to-end
+  (≈10⁴× warm), replicated at a second operating point (Spearman 0.9988).
 - **Main caveat:** 2D, fixed load geometry, unity view factor, in-distribution queries:
   a controlled prototype, not a general theorem. The rank-3 collapse is a property of the
   fixed geometry, not of radiation physics.
@@ -27,13 +31,16 @@ transients.
 
 ```bash
 julia --project=non-linear -e 'using Pkg; Pkg.instantiate()'
-julia --project=non-linear non-linear/test/runtests.jl      # 49 assertions
-# then, in order:
-julia --project=non-linear non-linear/scripts/01_validate_steady.jl
-julia --project=non-linear non-linear/scripts/02_generate_steady_dataset.jl
-# ... through 13; and the live console:
+julia --project=non-linear non-linear/test/runtests.jl        # test suite (CI runs this too)
+julia --project=non-linear non-linear/scripts/00_run_all.jl   # full reproduction, ~2 h
+# or step through scripts/01 ... 18 individually; the live console:
 julia --project=non-linear non-linear/scripts/14_run_console.jl
 ```
+
+`scripts/18_report_numbers.jl` reprints every headline table straight from `data/*.jld2`,
+so the report can always be diffed against the data. Programmatic queries outside the
+training box should check `in_training_box(ε, Q)`; measured out-of-distribution
+degradation is in the report's robustness section.
 
 The console solves the steady FOM live while you drag ε and Q (a 50 ms Newton solve is
 interactive), next to the surrogate, the error field, QoI readouts and both σ-spectra; the
@@ -52,9 +59,10 @@ button-press away:
 - `scripts/01–14`: numbered, deterministic (StableRNGs + Sobol): validate steady, steady
   dataset/POD/mappers/eval/benchmark, validate transient, transient dataset/space-time
   POD/mapper/eval, Nr study, design study, console.
-- `test/`: seven named test files: MMS rates 1.9996/1.9999/2.0000 through the nonlinear BC,
-  AD = FD = hand-written Jacobian, exact discrete energy balance, θ-family dt-orders
-  0.95–0.98 / 2.08–2.00, nodally exact 1D radiative equilibrium.
+- `test/`: eight named test files (66 assertions): MMS rates 1.9996/1.9999/2.0000 through
+  the nonlinear BC, AD = FD = hand-written Jacobian, exact discrete energy balance,
+  θ-family dt-orders 0.95–0.98 / 2.08–2.00, nodally exact 1D radiative equilibrium, and a
+  skip-guarded regression file pinning the deployed surrogates with 3× margin.
 - `report/report.md`: the write-up, figures included; `figures/`: all generated figures.
 
 ## Headline (steady, held-out; deployed rank r = 2, pinned by the rank sweep)
@@ -68,7 +76,10 @@ button-press away:
 POD floor at r=2: 1.1e-9 (basis ≠ bottleneck). Speed-ups: batched throughput over FOM Newton
 solves, incl. reconstruction, excl. plotting/model loading, after warm-up (BenchmarkTools
 medians, batch = 102). Coefficients are trained **whitened**; the rank cliff gives c a ~1e9
-dynamic range.
+dynamic range. Robustness (report §8.7): 5-seed ranges POD-MLP [0.97, 1.6]e-3, POD-KAN
+[2.3, 3.5]e-3, transient [1.6, 2.3]e-2; the rank-3 cliff replicates at 120×60 and with P2
+elements; out-of-distribution the median error grows ~17× just outside the box, so queries
+should stay inside `in_training_box`.
 
 Key figures: `figures/11_spacetime_decay.png` (the steady rank-3 cliff vs the rich transient
 spectrum, the project's keystone), `figures/12_transient_eval.png` (P_rad tracking through

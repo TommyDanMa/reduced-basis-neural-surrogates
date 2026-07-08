@@ -13,7 +13,7 @@ manifold is numerically **rank-3** ($\sigma_3/\sigma_1 \approx 7\cdot 10^{-9}$):
 move temperature levels and amplitudes of essentially fixed spatial shapes, so all of the
 problem's strong nonlinearity lives in the coefficient map $c(\mu)$. This is exactly the
 regime where a tiny coefficient mapper is the right surrogate, and where the reconstruction
-basis is *provably* not the bottleneck. **(ii)** Transient load switching restores a genuinely
+basis is demonstrably not the bottleneck. **(ii)** Transient load switching restores a genuinely
 higher-dimensional manifold: the space-time POD spectrum decays orders of magnitude more
 slowly, and the resulting $(\mu, t) \mapsto c$ surrogate reproduces full-order **design
 rankings** (worst-case chip temperature over a load cycle, across an emissivity × duty grid)
@@ -104,7 +104,9 @@ test them (below) independently of any solver behaviour.
 
 ## 4. Solver validation
 
-Seven named test files (49 assertions) pin the physics before any ML enters:
+Eight named test files (66 assertions) pin the physics before any ML enters, plus a
+skip-guarded regression file that pins the *deployed* surrogates' quality with 3× margin
+whenever the data artifacts are present:
 
 | Test | What it pins | Result |
 | --- | --- | --- |
@@ -144,7 +146,14 @@ converged Newton solve each (median 49 ms, worst energy balance 6e-12, peak temp
 ![POD σ-decay and reconstruction floor](../figures/06_pod_decay.png)
 
 **The steady manifold is numerically rank three** (and rank *two* for every practical
-purpose). Mechanism: with the load geometry fixed, varying $Q$ scales the (linear)
+purpose). The collapse is not a discretization artifact: replicating the POD on a 2× finer
+grid gives $\sigma_3/\sigma_1 = 6.7\cdot10^{-9}$ (120×60, P1) and with quadratic elements
+$6.8\cdot10^{-9}$ (60×30, P2), against $7.2\cdot10^{-9}$ at the baseline
+(`scripts/16_grid_independence.jl`).
+
+![Grid independence of the σ-decay](../figures/17_grid_independence.png)
+
+Mechanism: with the load geometry fixed, varying $Q$ scales the (linear)
 source-response shape exactly, and varying $\varepsilon$ mostly moves the radiative
 equilibrium *level*, a strongly nonlinear scalar multiplying the constant mode. Strong
 parameter nonlinearity is invisible to POD rank: it lives entirely in the coefficient map
@@ -279,9 +288,19 @@ floored at 1% of $\sigma_1$.
 
 The sweep is *flat*: the mapper, not the basis, is the binding constraint. This is the steady
 lesson in mirror image (there the basis was five orders better than needed; here it is four
-to eight). Learning $c$ as an explicit function of $(\mu, t)$ across parameter-dependent
-switching fronts is genuinely hard for a small regression; the principled fix is latent
-*dynamics* (neural ODE / operator inference on $c(t)$, §11), not more modes.
+to eight).
+
+**Why the plateau (diagnosed, `scripts/17_mapper_diagnostics.jl`).** Two measurements pin it
+down. The learning curve is steep: 24 → 48 → 77 training trajectories give errors
+5.2e-2 → 3.0e-2 → 1.8e-2, slopes 0.82 and 1.10 in $M$ — near $M^{-1}$, far steeper than the
+statistical $M^{-1/2}$. The plateau is therefore **data-limited, not basis-limited**: more
+trajectories would buy accuracy directly. The per-mode view shows the same signal-to-noise
+collapse as the parent project: modes 1–4 are learned to 7–22% relative error, mode 6 to
+87%, and modes 7–8 are pure noise (relative error > 1), which is exactly why the rank sweep
+is flat. The two structural levers are a larger trajectory budget and latent *dynamics*
+(neural ODE / operator inference on $c(t)$, §11); more modes is measurably not one of them.
+
+![Learning curve and per-mode diagnostics](../figures/18_mode_diagnostics.png)
 
 QoI tracking at the deployed $r=8$: peak-temperature error median 14.3 K / max 42.6 K along
 trajectories; radiated-power tracking error median 14% / max 39%. The worst case is
@@ -317,26 +336,60 @@ shape), not a radiation property.
 
 The capstone reproduces the project's stated success criterion, a tool for testing subtle
 design changes. Candidate designs: a 10×10 grid over emissivity coating ε ∈ [0.15, 0.9] and
-load duty ∈ [0.25, 0.75] at fixed $Q_p = 650$ W/m, period 5400 s; QoI = worst-case chip
-temperature over the final (settled) load cycle.
+load duty ∈ [0.25, 0.75]; QoI = worst-case chip temperature over the final (settled) load
+cycle. Two operating points guard against the result being a one-off.
 
-| | FOM | surrogate (r = 8) |
+| | OP1: $Q_p$=650 W/m, 5400 s | OP2: $Q_p$=400 W/m, 9000 s |
 | --- | ---: | ---: |
-| 100-candidate sweep | 996.6 s | **2.7 s** (373×, end-to-end) |
-| QoI error | — | median 2.4 K, max 16.5 K (range 382–785 K) |
-| Spearman rank correlation | — | **0.9987** |
-| top-5 designs recovered | — | **5 / 5** |
-| best design | (ε=0.90, duty=0.25) | **(ε=0.90, duty=0.25)**, identical |
+| FOM sweep (100 candidates) | 1028 s | 937 s |
+| surrogate sweep | 2.9 s (incl. Julia JIT) | **0.088 s** (warm) |
+| throughput | 353× | ≈10,600× |
+| QoI error | median 2.4 K, max 16.5 K | median 2.2 K, max 16.8 K |
+| QoI range | 382–785 K | 320–645 K |
+| Spearman rank correlation | **0.9987** | **0.9988** |
+| top-5 designs recovered | **5 / 5** | **5 / 5** |
+| best design | identical (ε=0.90, duty=0.25) | identical (ε=0.90, duty=0.25) |
+
+The throughput asymmetry is compilation, reported rather than hidden: the first sweep pays
+Julia's JIT once; warm sweeps cost ~0.1 s for 100 candidates. The conservative end-to-end
+number is 353×; the warm number is the deployment-relevant one.
 
 ![Design study: worst-case chip temperature maps](../figures/14_design_study.png)
 
 *Worst-case chip temperature over a 10×10 (ε, duty) grid. The surrogate reproduces the FOM
-ranking with Spearman correlation 0.999 at 373× higher throughput, with the same best
-design point (star).*
+ranking with Spearman correlation 0.999 at over 350× higher throughput (≈10⁴× warm), with
+the same best design point (star).*
+
+![Second operating point](../figures/19_design_study_op2.png)
 
 The claim defended is deliberately *ranking fidelity*, not pointwise truth: a screening tool
 must order candidates correctly and hand the shortlist to the full-order model, which this
 one does, in-distribution, with margin.
+
+### 8.7 Robustness: seeds and out-of-distribution behaviour
+
+Are the headlines one lucky seed? Five fresh training seeds per deployed mapper
+(`scripts/15_robustness.jl`; deployed models keep their rank-keyed seeds, the ensemble is
+reported, not deployed):
+
+| mapper | deployed | 5-seed range |
+| --- | ---: | ---: |
+| POD-MLP r=2 | 9.18e-4 | [9.69e-4, 1.59e-3] |
+| POD-KAN r=2 | 2.92e-3 | [2.28e-3, 3.45e-3] |
+| POD-MLP-t r=8 | 1.74e-2 | [1.57e-2, 2.26e-2] |
+
+Every conclusion survives every seed: the ordering (MLP < KAN, both ≪ direct), the r=2
+optimum, and the transient plateau. One transparency note: the deployed steady MLP happens
+to sit at the favourable edge of its ensemble; all fresh seeds stay within 1.7× of it, and
+the README quotes the spread alongside the headline.
+
+Outside the training box the surrogate degrades *fast*, and now measurably: on 60 points in
+a physically sensible ring (ε down to 0.02, Q up to 1000 W/m), the median error grows from
+7.0e-4 in-box to 1.2e-2, with a worst case of 19.5% at only 9% normalized exceedance.
+`in_training_box(ε, Q)` in `scripts/config.jl` is the guard; the honest usage contract is:
+screen inside the box, and hand anything near the boundary to the FOM.
+
+![Seed robustness and OOD degradation](../figures/16_robustness.png)
 
 ## 9. Interactive console
 
@@ -364,8 +417,9 @@ microscope, not the science.
    design studies; batched steady field queries reach 10³–10⁴×.
 
 **Caveats.** 2D, fixed geometry, unity view factor (deep space only), constant properties,
-effective (not measured) $\rho c$, in-distribution queries only, and a single PDE family:
-a controlled prototype, not a general theorem. The steady rank-3 result is a property of the
+effective (not measured) $\rho c$, in-distribution queries only (measured: median error
+grows ~17× just outside the training box, worst ~20% at 9% exceedance; §8.7), and a single
+PDE family: a controlled prototype, not a general theorem. The steady rank-3 result is a property of the
 fixed load geometry, not of radiation physics; parametric load *placement* would re-thicken
 the steady manifold (future work).
 
