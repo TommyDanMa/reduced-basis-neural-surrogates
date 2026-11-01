@@ -2,7 +2,9 @@
 
 **Reduced-Basis Neural Surrogates for Parametric Elliptic Equations**
 
-*A Treball de Recerca in scientific machine learning.*
+*An independent, collaborative exploration in scientific machine learning; not a Treball de Recerca.*
+
+See the README contribution disclosure for Tommy’s role, his father’s implementation contributions, and AI assistance.
 
 > **Thesis.** A parametric PDE solution operator can be learned efficiently by a
 > *small* neural network if the solutions are first projected onto the right

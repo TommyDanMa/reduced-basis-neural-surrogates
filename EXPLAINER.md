@@ -35,7 +35,7 @@ job becomes small and easy.
 
 ## The two projects
 
-**1. The square plate (the original Treball de Recerca).** A heated square plate whose
+**1. The square plate (the original independent exploration).** A heated square plate whose
 material properties depend on two dials. Result: the tiny slider-predicting network is
 about ten times more accurate than a big network predicting every cell, uses about
 thirteen times fewer learnable numbers, and its answers respect the physics far better.

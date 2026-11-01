@@ -2,7 +2,7 @@
 
 **Reduced-Basis Neural Surrogates for Parametric Elliptic Equations**
 
-A Julia project (a *Treball de Recerca* in scientific machine learning) that learns
+An independent, collaborative Julia exploration in scientific machine learning that learns
 the solution operator of a parametric elliptic PDE **efficiently** by predicting a
 handful of reduced-basis coefficients instead of every grid value.
 
@@ -40,7 +40,7 @@ the validation-selected rank **r = 5**):
 The reduced-basis models are far more accurate, far smaller and far more physically
 consistent (tiny PDE residual) than the direct baseline. The POD reconstruction
 floor at rank 5 is ~9e-5 — orders of magnitude below the network error — so **the
-basis is never the bottleneck, the network is.** (Numbers from `scripts/07`;
+coefficient predictor dominates the reported error at this rank on this dataset.** (Numbers from `scripts/07`;
 regenerate to reproduce.)
 
 Two caveats worth reading before quoting the table: a **rank sweep** (`scripts/11`)
@@ -89,7 +89,7 @@ src/        ReducedBasisSurrogates.jl (core module) + pde_solver, coefficients,
             pod, models, metrics, plotting, console; models_kan.jl is the P1 add-on
 scripts/    01–10 numbered, deterministic pipeline steps (+ config.jl)
 test/       runtests.jl + five focused test files
-report/     report.md (11-section TR) + refs.bib
+report/     report.md (technical study) + refs.bib
 figures/    exported PNG figures
 data/        cached snapshots/POD/models (git-ignored, regenerable)
 ```
@@ -122,3 +122,25 @@ structure-preserving neural operators. See `report/report.md` §11.
 
 Julia ≥ 1.10 (developed on 1.12). Key packages: Lux, KolmogorovArnold, Zygote,
 Optimisers, CairoMakie/GLMakie, JLD2, QuasiMonteCarlo (see `Project.toml`).
+
+## Contributions and assistance
+
+This was an independent exploration, **not Tommy's Treball de Recerca**.
+Tommy participated in defining the modeling direction, studying POD and the PDE
+methods, and using AI assistance during implementation. His father contributed to
+implementation. The project was collaborative and AI-assisted; repository contents
+and commit authors do not establish that Tommy independently wrote every algorithm,
+test, or experiment. The exact original AI tools and file-by-file division of work
+are not recorded here. External methods and sources are cited in `report/refs.bib`.
+RadiativeSurrogates.jl is the nonlinear continuation of this exploration.
+Codex assisted with the November 2026 factual documentation corrections.
+
+## Fresh-clone demonstration limits
+
+The console is executable, but `data/` (snapshots, POD basis and trained models) is
+not distributed. Run scripts 02 and 03 before the console; it can then demonstrate
+POD projection without training a model. A learned-surrogate console additionally
+needs the corresponding trained model from scripts 04–06. The screenshot above is
+a static preview, not an interactive demo. Training is not necessary to inspect the
+committed figures or run `test/runtests.jl`. The benchmark table reports existing
+runs, not a general performance guarantee or a new verification run.
