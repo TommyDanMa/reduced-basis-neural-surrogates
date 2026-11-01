@@ -68,7 +68,9 @@ mean $\bar u$, the SVD $S-\bar u\mathbf 1^\top=\Phi\Sigma V^\top$ yields POD mod
 (columns of $\Phi$). By the **Eckart–Young–Mirsky** theorem, the rank-$r$
 truncation is the best rank-$r$ approximation in the Frobenius norm, and the
 projection error equals the tail energy $\sqrt{\sum_{i>r}\sigma_i^2}$ - an
-*empirical, computable* upper bound on $d_r(\mathcal M)$.
+exact error for this centered finite snapshot matrix. It is empirical evidence
+of compressibility, not a certified upper bound on the worst-case width of the
+full parametric manifold; centering also makes the reconstruction affine.
 
 **Reduced-basis reconstruction.** Coefficients are
 $c_i(\mu)=\phi_i^\top\big(u(\mu)-\bar u\big)$ and

@@ -3,8 +3,9 @@
 # On the uniform grid the L²-inner product is a constant times the Euclidean one,
 # so the plain SVD of the snapshot matrix already gives the L²-optimal POD basis.
 # By the Eckart–Young–Mirsky theorem the rank-r truncation is the best rank-r
-# approximation in the Frobenius norm, and the tail energy √(Σ_{i>r} σ_i²) is an
-# empirical upper bound on the Kolmogorov n-width of the solution manifold.
+# approximation of the centered snapshot matrix in the Frobenius norm. The tail
+# √(Σ_{i>r} σ_i²) is that finite-sample error, not a certified worst-case bound
+# over the entire parametric solution manifold.
 
 """
     PODBasis

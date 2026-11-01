@@ -99,8 +99,9 @@ data/        cached snapshots/POD/models (git-ignored, regenerable)
 A conservative second-order finite-volume discretisation gives a sparse SPD system
 `A(μ)u = b` (validated by manufactured solutions, observed order ≈ 2.00). Snapshots
 for Sobol-sampled `μ` are stacked and the SVD yields POD modes `Φ` and mean `ū`; by
-Eckart–Young the rank-`r` truncation is optimal and the tail energy bounds the
-Kolmogorov *n*-width. Because every snapshot vanishes on the boundary, so do the
+Eckart–Young the rank-`r` truncation minimizes the centered snapshot matrix’s
+Frobenius error, equal to its discarded singular-value tail. This finite-sample
+error does not certify a worst-case bound over the full solution manifold. Because every snapshot vanishes on the boundary, so do the
 modes - reconstructions satisfy the Dirichlet condition **exactly**. A small MLP or
 KAN learns `μ ↦ c`; the relative PDE residual is the physics-consistency metric, and
 an optional residual-regularised loss is available as an ablation.
