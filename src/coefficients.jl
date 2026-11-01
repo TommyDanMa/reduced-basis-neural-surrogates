@@ -36,7 +36,7 @@ full_coords(g::Grid) = [i * g.h for i in 0:(g.n + 1)]
 """
     diffusion(x, y, μ)
 
-Parametric diffusion coefficient from the TR experiment,
+Parametric diffusion coefficient from the independent exploration,
 
     a(x,y;μ) = 1 + 0.3·μ₁·sin(πx)·sin(πy) + 0.2·μ₂·cos(2πy).
 
